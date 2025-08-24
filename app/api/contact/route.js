@@ -2,7 +2,7 @@ import axios from 'axios';
 import { NextResponse } from 'next/server';
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend("re_34xP9oxD_B39Ajzs91K3kNASRCbVGDQQ4");
 
 // Helper function to send a message via Telegram
 async function sendTelegramMessage(token, chat_id, message) {
