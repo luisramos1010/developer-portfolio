@@ -1,18 +1,8 @@
 import axios from 'axios';
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { Resend } from "resend";
 
-// Create and configure Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, 
-  auth: {
-    user: process.env.EMAIL_ADDRESS,
-    pass: process.env.GMAIL_PASSKEY, 
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Helper function to send a message via Telegram
 async function sendTelegramMessage(token, chat_id, message) {
@@ -47,10 +37,12 @@ const generateEmailTemplate = (name, email, userMessage) => `
 
 // Helper function to send an email via Nodemailer
 async function sendEmail(payload, message) {
+  console.log("email address: ", process.env.EMAIL_ADDRESS);
+  
   const { name, email, message: userMessage } = payload;
   
   const mailOptions = {
-    from: "Portfolio", 
+    from: email, 
     to: process.env.EMAIL_ADDRESS, 
     subject: `New Message From ${name}`, 
     text: message, 
@@ -59,7 +51,9 @@ async function sendEmail(payload, message) {
   };
   
   try {
-    await transporter.sendMail(mailOptions);
+    const result = await resend.emails.send(mailOptions);
+    console.log("result: ", result);
+    
     return true;
   } catch (error) {
     console.error('Error while sending email:', error.message);
@@ -71,26 +65,28 @@ export async function POST(request) {
   try {
     const payload = await request.json();
     const { name, email, message: userMessage } = payload;
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    const chat_id = process.env.TELEGRAM_CHAT_ID;
+    // const token = process.env.TELEGRAM_BOT_TOKEN;
+    // const chat_id = process.env.TELEGRAM_CHAT_ID;
 
     // Validate environment variables
-    if (!token || !chat_id) {
-      return NextResponse.json({
-        success: false,
-        message: 'Telegram token or chat ID is missing.',
-      }, { status: 400 });
-    }
+    // if (!token || !chat_id) {
+    // if (!token || !chat_id) { 
+    //   return NextResponse.json({
+    //     success: false,
+    //     message: 'Telegram token or chat ID is missing.',
+    //   }, { status: 400 });
+    // }
 
     const message = `New message from ${name}\n\nEmail: ${email}\n\nMessage:\n\n${userMessage}\n\n`;
 
     // Send Telegram message
-    const telegramSuccess = await sendTelegramMessage(token, chat_id, message);
+    // const telegramSuccess = await sendTelegramMessage(token, chat_id, message);
 
     // Send email
     const emailSuccess = await sendEmail(payload, message);
 
-    if (telegramSuccess && emailSuccess) {
+    // if (telegramSuccess && emailSuccess) {
+    if (emailSuccess) {
       return NextResponse.json({
         success: true,
         message: 'Message and email sent successfully!',
